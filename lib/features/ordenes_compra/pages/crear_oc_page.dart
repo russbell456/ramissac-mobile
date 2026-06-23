@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sistema_ocs/features/ordenes_compra/models/rq_item_modeloc.dart';
+import 'package:sistema_ocs/features/ordenes_compra/models/oc_item_model.dart';
 import '../models/orden_compra_request.dart';
 import 'package:sistema_ocs/data/services/orden_compra_service.dart';
 import '../widgets/rq_item_card.dart';
@@ -23,9 +24,13 @@ class _CrearOCPageState extends State<CrearOCPage> {
     final seleccionados = items
         .where((i) => i.seleccionado && i.cantidadComprar > 0)
         .map(
-          (i) => ItemCompraRequest(
+          (i) => OCItem(
+            rqId: 0,
             rqItemId: i.id,
-            cantidadComprada: i.cantidadComprar,
+            descripcion: i.producto,
+            cantidadSolicitada: i.cantidadSolicitada.toDouble(),
+            cantidadComprada: i.cantidadComprar.toDouble(),
+            costoUnitario: i.costoUnitario,
           ),
         )
         .toList();
@@ -38,15 +43,21 @@ class _CrearOCPageState extends State<CrearOCPage> {
     }
 
     final request = OrdenCompraRequest(
+      estado: 'pendiente',
+      proveedor: 'Proveedor Genérico',
       tipoCompra: 'FISICA',
-      items: seleccionados,
+      fecha: DateTime.now().toIso8601String().split('T')[0],
+      itemsComprados: seleccionados,
+      comprobantes: [],
     );
 
     await service.crearOrden(request);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Orden creada correctamente')),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Orden creada correctamente')),
+      );
+    }
   }
 
   @override
@@ -63,6 +74,9 @@ class _CrearOCPageState extends State<CrearOCPage> {
               },
               onCantidadChanged: (value) {
                 item.cantidadComprar = int.tryParse(value) ?? 0;
+              },
+              onCostoChanged: (value) {
+                item.costoUnitario = double.tryParse(value) ?? 0.0;
               },
             ),
           ),

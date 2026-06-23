@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/data/models/rq_model.dart';
 import 'package:sistema_ocs/features/ordenes_compra/models/oc_item_model.dart';
+import 'package:sistema_ocs/features/ordenes_compra/models/comprobante_local.dart';
 import 'package:sistema_ocs/features/ordenes_compra/models/orden_compra_request.dart';
 import 'package:sistema_ocs/features/ordenes_compra/providers/oc_provider.dart';
 
@@ -117,7 +118,7 @@ class _CrearOCDesdeRQScreenState extends ConsumerState<CrearOCDesdeRQScreen> {
         ),
         ..._comprobantesSeleccionados.map((c) => ListTile(
           title: Text(c.tipoDocumento),
-          subtitle: Text(c.archivoRuta!.split('/').last),
+          subtitle: Text(c.archivoRuta.split('/').last),
           trailing: IconButton(icon: const Icon(Icons.delete), onPressed: () {
             setState(() => _comprobantesSeleccionados.remove(c));
           }),
@@ -155,13 +156,15 @@ class _CrearOCDesdeRQScreenState extends ConsumerState<CrearOCDesdeRQScreen> {
   Future<void> _seleccionarArchivo() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
     if (result != null) {
-      // Aquí podrías abrir un diálogo para preguntar si es MERCADERIA_COMPROBANTE o GUIA_REMISION
-      setState(() {
-        _comprobantesSeleccionados.add(ComprobanteLocal(
-          tipoDocumento: "MERCADERIA_COMPROBANTE", 
-          archivoRuta: result.files.single.path,
-        ));
-      });
+      final path = result.files.single.path;
+      if (path != null) {
+        setState(() {
+          _comprobantesSeleccionados.add(ComprobanteLocal(
+            tipoDocumento: "MERCADERIA_COMPROBANTE", 
+            archivoRuta: path,
+          ));
+        });
+      }
     }
   }
 

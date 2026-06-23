@@ -5,6 +5,7 @@ class RqItemModeloc {
 
   bool seleccionado;
   int cantidadComprar;
+  double costoUnitario;
 
   RqItemModeloc({
     required this.id,
@@ -12,5 +13,6 @@ class RqItemModeloc {
     required this.cantidadSolicitada,
     this.seleccionado = false,
     this.cantidadComprar = 0,
+    this.costoUnitario = 0.0,
   });
 }
