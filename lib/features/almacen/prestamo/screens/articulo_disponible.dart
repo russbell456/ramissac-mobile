@@ -83,7 +83,7 @@ class _ArticulosDisponiblesScreenState
         data: (articulos) {
           final filteredArticulos = articulos.where((art) {
             final nombre = art.nombre.toLowerCase();
-            final codigo = art.codigoExcel.toLowerCase();
+            final codigo = (art.codigoExcel ?? '').toLowerCase();
             return nombre.contains(_searchQuery) ||
                 codigo.contains(_searchQuery);
           }).toList();

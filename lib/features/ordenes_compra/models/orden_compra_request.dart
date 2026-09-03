@@ -41,7 +41,7 @@ class OrdenCompraRequest {
       "notas": notas,
       "items_comprados": itemsComprados.map((i) => i.toJson()).toList(),
       "comprobantes": comprobantes
-          .where((c) => c.archivoRuta != null && c.archivoRuta!.isNotEmpty)
+          .where((c) => c.archivoRuta.isNotEmpty)
           .map((c) => c.toJson())
           .toList(),
     };

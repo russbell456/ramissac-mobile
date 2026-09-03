@@ -7,7 +7,7 @@ const _storage = FlutterSecureStorage();
 
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio(BaseOptions(
-    baseUrl: 'https://ramissac-api.sorbits.site',
+    baseUrl: 'http://192.168.1.34:8000',
     connectTimeout: const Duration(seconds: 15),
     receiveTimeout: const Duration(seconds: 15),
   ));

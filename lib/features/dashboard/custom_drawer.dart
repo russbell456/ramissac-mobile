@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:sistema_ocs/features/almacen/almacen_main_screen.dart';
+import 'package:sistema_ocs/features/almacen/articulos/articulos_list_screen.dart';
 import 'package:sistema_ocs/features/login/auth_notifier.dart';
 
 class CustomDrawer extends ConsumerWidget {
@@ -60,6 +61,23 @@ class CustomDrawer extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const AlmacenMainScreen()),
+                    );
+                  },
+                ),
+              ],
+              if (userRole == 'admin' || userRole == 'almacenero') ...[
+                ListTile(
+                  leading: const Icon(Icons.inventory_2_outlined, color: AppTheme.primary),
+                  title: const Text('Artículos (CRUD)'),
+                  subtitle: Text(
+                    'Gestionar artículos de almacén',
+                    style: AppTheme.bodySmall,
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ArticulosListScreen()),
                     );
                   },
                 ),
