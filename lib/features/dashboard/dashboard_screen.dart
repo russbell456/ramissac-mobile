@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sistema_ocs/core/theme/app_theme.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
-import 'package:sistema_ocs/features/almacen/prestamo/providers/carrito_provider.dart';
-import 'package:sistema_ocs/features/almacen/prestamo/screens/carrito_screen.dart';
+import 'package:sistema_ocs/features/almacen/prestamos/providers/carrito_provider.dart';
+import 'package:sistema_ocs/features/almacen/prestamos/screens/carrito_screen.dart';
 import 'package:sistema_ocs/features/compras/items_to_buy_screen.dart';
 import 'package:sistema_ocs/features/dashboard/custom_drawer.dart';
 import 'package:sistema_ocs/features/dashboard/dashboard_home_view.dart';

@@ -1,387 +1,378 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_flutter/lucide_flutter.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
 
+/// Inicio del panel RAMIS.
+///
+/// Las métricas y el gráfico siguen siendo valores ilustrativos, igual que en
+/// la pantalla original. Las acciones sin implementación se dejan intactas.
 class DashboardHomeView extends StatelessWidget {
   const DashboardHomeView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.spacingXXL),
-        child: Column(
-          children: [
-            // --- CABECERA CON LOGO Y BIENVENIDA ---
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: AppTheme.borderRadiusExtraLarge,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.shadow,
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Logo en un contenedor circular con sombra
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryDark.withOpacity(0.2),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/images/logo.jpg',
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: AppTheme.primaryDark,
-                            child: const Center(
-                              child: Text(
-                                'R',
-                                style: TextStyle(
-                                  color: AppTheme.textOnPrimary,
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Bienvenido,',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'RAMIS Mining',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryDark,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.secondaryLight,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'Panel de Control',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.secondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+    final scheme = Theme.of(context).colorScheme;
 
-            const SizedBox(height: 30),
-
-            // --- MÉTRICAS CLAVE (SIN TÍTULO, MÁS VISUAL) ---
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.1,
-              children: [
-                _buildMetricCard(
-                  icon: LucideIcons.activity,
-                  value: '5',
-                  label: 'Operaciones',
-                  color: AppTheme.primary,
-                  bgColor: AppTheme.primaryLight,
-                ),
-                _buildMetricCard(
-                  icon: LucideIcons.truck,
-                  value: '12',
-                  label: 'Equipos',
-                  color: AppTheme.secondary,
-                  bgColor: AppTheme.secondaryLight,
-                ),
-                _buildMetricCard(
-                  icon: LucideIcons.trendingUp,
-                  value: '98%',
-                  label: 'Eficiencia',
-                  color: AppTheme.primary,
-                  bgColor: AppTheme.primaryLight,
-                ),
-                _buildMetricCard(
-                  icon: LucideIcons.users,
-                  value: '340',
-                  label: 'Colaboradores',
-                  color: AppTheme.secondary,
-                  bgColor: AppTheme.secondaryLight,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-
-            // --- TARJETA DE GRÁFICO SIMULADO (PARA DAR VIDA) ---
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: AppTheme.borderRadiusExtraLarge,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.shadow,
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Producción Semanal',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryDark,
-                        ),
-                      ),
-                      Icon(
-                        LucideIcons.barChart3,
-                        color: AppTheme.secondary,
-                        size: 22,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildBar('L', 40, AppTheme.secondary),
-                      _buildBar('M', 60, AppTheme.secondary),
-                      _buildBar('M', 35, AppTheme.secondary),
-                      _buildBar('J', 80, AppTheme.primary),
-                      _buildBar('V', 55, AppTheme.primary),
-                      _buildBar('S', 45, AppTheme.primary),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // --- ACCIONES RÁPIDAS (SOLO TRES, VISUALES) ---
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.surface,
-                borderRadius: AppTheme.borderRadiusExtraLarge,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.shadow,
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        LucideIcons.zap,
-                        color: AppTheme.primary,
-                        size: 22,
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Acciones rápidas',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _buildQuickAction(
-                    icon: LucideIcons.filePlus,
-                    label: 'Nuevo reporte',
-                    color: AppTheme.primary,
-                    onTap: () {},
-                  ),
-                  const SizedBox(height: 12),
-                  _buildQuickAction(
-                    icon: LucideIcons.alertTriangle,
-                    label: 'Registrar incidente',
-                    color: AppTheme.secondary,
-                    onTap: () {},
-                  ),
-                  const SizedBox(height: 12),
-                  _buildQuickAction(
-                    icon: LucideIcons.calendar,
-                    label: 'Planificar',
-                    color: AppTheme.primary,
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 100),
-          ],
-        ),
-      ),
+    return RamisScaffold(
+      safeArea: true,
       floatingActionButton: FloatingActionButton(
+        // Conservado del original: aún no tiene acción implementada.
         onPressed: () {},
-        backgroundColor: AppTheme.secondary,
-        child: const Icon(LucideIcons.messageCircle, color: AppTheme.textOnPrimary),
+        tooltip: 'Mensajes',
+        child: const Icon(LucideIcons.messageCircle),
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final horizontalPadding = constraints.maxWidth >= 600
+              ? RamisSpacing.large
+              : RamisSpacing.medium;
+          return SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              RamisSpacing.medium,
+              horizontalPadding,
+              112,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 900),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _welcomeHeader(context),
+                    const SizedBox(height: RamisSpacing.large),
+                    _sectionTitle(context, 'Resumen operativo',
+                        'Indicadores generales del sistema'),
+                    const SizedBox(height: RamisSpacing.medium),
+                    _metrics(context),
+                    const SizedBox(height: RamisSpacing.large),
+                    _weeklyProduction(context),
+                    const SizedBox(height: RamisSpacing.large),
+                    _quickActions(context),
+                    const SizedBox(height: RamisSpacing.small),
+                    Text(
+                      'Los indicadores mostrados son valores de ejemplo.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: context.ramis.textSecondary,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  // Tarjeta de métrica simplificada
-  Widget _buildMetricCard({
-    required IconData icon,
-    required String value,
-    required String label,
-    required Color color,
-    required Color bgColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: color.withOpacity(0.8),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Barra para el gráfico simulado
-  Widget _buildBar(String day, double height, Color color) {
-    return Column(
-      children: [
-        Container(
-          width: 16,
-          height: height,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(8),
+  Widget _welcomeHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return ClipRRect(
+      borderRadius: RamisRadius.large,
+      child: RamisBackground(
+        variant: RamisBackgroundVariant.banner,
+        overlayColor: scheme.surface,
+        overlayOpacity: 0.83,
+        child: Padding(
+          padding: const EdgeInsets.all(RamisSpacing.large),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const RamisLogo(width: 78, height: 78),
+              const SizedBox(width: RamisSpacing.medium),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bienvenido a',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: context.ramis.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: RamisSpacing.small),
+                    Text(
+                      'Corporación Ramis',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: scheme.onSurface,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: RamisSpacing.small),
+                    Text(
+                      'Panel de control',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 8),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(
+    BuildContext context,
+    String title,
+    String subtitle,
+  ) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: theme.textTheme.titleLarge),
+        const SizedBox(height: RamisSpacing.small),
         Text(
-          day,
-          style: AppTheme.bodySmall,
+          subtitle,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: context.ramis.textSecondary,
+          ),
         ),
       ],
     );
   }
 
-  // Botón de acción rápida minimalista
-  Widget _buildQuickAction({
+  Widget _metrics(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final items = [
+      _Metric(LucideIcons.activity, '5', 'Operaciones', scheme.primary),
+      _Metric(LucideIcons.truck, '12', 'Equipos', scheme.secondary),
+      _Metric(LucideIcons.trendingUp, '98%', 'Eficiencia', scheme.primary),
+      _Metric(LucideIcons.users, '340', 'Colaboradores', scheme.secondary),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 700 ? 4 : 2;
+        final width = (constraints.maxWidth -
+                (columns - 1) * RamisSpacing.medium) /
+            columns;
+        return Wrap(
+          spacing: RamisSpacing.medium,
+          runSpacing: RamisSpacing.medium,
+          children: [
+            for (final item in items)
+              SizedBox(
+                width: width,
+                child: _metricCard(context, item),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _metricCard(BuildContext context, _Metric item) {
+    final theme = Theme.of(context);
+    return RamisCard(
+      padding: const EdgeInsets.all(RamisSpacing.medium),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(RamisSpacing.small),
+            decoration: BoxDecoration(
+              color: item.color.withValues(alpha: 0.10),
+              borderRadius: RamisRadius.medium,
+            ),
+            child: Icon(item.icon, color: item.color, size: 22),
+          ),
+          const SizedBox(height: RamisSpacing.medium),
+          Text(
+            item.value,
+            style: theme.textTheme.headlineMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: RamisSpacing.small),
+          Text(
+            item.label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: context.ramis.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _weeklyProduction(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final bars = [
+      _Bar('L', 40, scheme.secondary),
+      _Bar('M', 60, scheme.secondary),
+      _Bar('M', 35, scheme.secondary),
+      _Bar('J', 80, scheme.primary),
+      _Bar('V', 55, scheme.primary),
+      _Bar('S', 45, scheme.primary),
+    ];
+
+    return RamisCard(
+      padding: const EdgeInsets.all(RamisSpacing.large),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text('Producción semanal',
+                    style: theme.textTheme.titleMedium),
+              ),
+              Icon(LucideIcons.barChart3, color: scheme.secondary, size: 22),
+            ],
+          ),
+          const SizedBox(height: RamisSpacing.small),
+          Text(
+            'Representación ilustrativa',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: context.ramis.textSecondary,
+            ),
+          ),
+          const SizedBox(height: RamisSpacing.large),
+          SizedBox(
+            height: 112,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                for (final bar in bars) _buildBar(context, bar),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBar(BuildContext context, _Bar bar) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 18,
+          height: bar.height,
+          decoration: BoxDecoration(
+            color: bar.color.withValues(alpha: 0.8),
+            borderRadius: RamisRadius.small,
+          ),
+        ),
+        const SizedBox(height: RamisSpacing.small),
+        Text(bar.day, style: Theme.of(context).textTheme.labelSmall),
+      ],
+    );
+  }
+
+  Widget _quickActions(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return RamisCard(
+      padding: const EdgeInsets.all(RamisSpacing.large),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.zap, color: scheme.primary, size: 22),
+              const SizedBox(width: RamisSpacing.small),
+              Expanded(
+                child: Text('Acciones rápidas',
+                    style: theme.textTheme.titleMedium),
+              ),
+            ],
+          ),
+          const SizedBox(height: RamisSpacing.medium),
+          _quickAction(
+            context,
+            icon: LucideIcons.filePlus,
+            label: 'Nuevo reporte',
+            color: scheme.primary,
+            onTap: () {},
+          ),
+          const SizedBox(height: RamisSpacing.small),
+          _quickAction(
+            context,
+            icon: LucideIcons.alertTriangle,
+            label: 'Registrar incidente',
+            color: scheme.secondary,
+            onTap: () {},
+          ),
+          const SizedBox(height: RamisSpacing.small),
+          _quickAction(
+            context,
+            icon: LucideIcons.calendar,
+            label: 'Planificar',
+            color: scheme.primary,
+            onTap: () {},
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickAction(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required Color color,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(width: 16),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                color: color,
-                fontWeight: FontWeight.w500,
+    final theme = Theme.of(context);
+    return Material(
+      color: color.withValues(alpha: 0.07),
+      borderRadius: RamisRadius.medium,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: RamisRadius.medium,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: RamisSpacing.medium,
+            vertical: RamisSpacing.medium,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: RamisSpacing.medium),
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-            const Spacer(),
-            Icon(LucideIcons.chevronRight, color: color, size: 18),
-          ],
+              Icon(LucideIcons.chevronRight, color: color, size: 18),
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _Metric {
+  const _Metric(this.icon, this.value, this.label, this.color);
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+}
+
+class _Bar {
+  const _Bar(this.day, this.height, this.color);
+  final String day;
+  final double height;
+  final Color color;
 }

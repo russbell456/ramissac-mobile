@@ -1,168 +1,274 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:lucide_flutter/lucide_flutter.dart';
-import 'package:sistema_ocs/core/theme/app_theme.dart';
-import 'package:sistema_ocs/features/almacen/escanear_qr_screen.dart';
-import 'package:sistema_ocs/features/almacen/prestamo/screens/articulo_disponible.dart';
-import 'package:sistema_ocs/features/almacen/prestamo/widgets/formulario_cantidades_dialog.dart'; // Ajusta según tu tema real
- // Ajusta según tu tema real
+import 'package:sistema_ocs/core/design_system/ramis_design_system.dart';
+import 'package:sistema_ocs/features/dashboard/dashboard_screen.dart';
+import 'package:sistema_ocs/features/almacen/prestamos/screens/escanear_qr_screen.dart';
+import 'package:sistema_ocs/features/almacen/prestamos/screens/articulos_disponibles_screen.dart';
+import 'package:sistema_ocs/features/almacen/prestamos/screens/mis_prestamos_screen.dart';
 
-// Importa las pantallas que iremos creando después
-// import 'solicitar_prestamo_screen.dart';
-// import 'mis_pendientes_screen.dart';
-// import 'escanear_qr_screen.dart';
-// import 'prestamo_manual_screen.dart';
-
-class AlmacenDashboardScreen extends ConsumerWidget {
+/// Pantalla principal del módulo Almacén / Préstamos.
+/// Conserva las reglas de acceso y las rutas originales.
+class AlmacenDashboardScreen extends ConsumerStatefulWidget {
   const AlmacenDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return FutureBuilder<String?>(
-      future: const FlutterSecureStorage().read(key: 'user_role'),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+  ConsumerState<AlmacenDashboardScreen> createState() =>
+      _AlmacenDashboardScreenState();
+}
 
-        final role = (snapshot.data ?? 'user').toLowerCase();
+class _AlmacenDashboardScreenState
+    extends ConsumerState<AlmacenDashboardScreen> {
+  late final Future<String?> _roleFuture;
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Almacén - Préstamos de Equipos'),
-          ),
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Tarjeta de bienvenida / info de rol
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    color: Colors.white,
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        children: [
-                          Icon(
-                            role == 'trabajador' ? LucideIcons.user : LucideIcons.userCog,
-                            size: 48,
-                            color: AppTheme.primary,
+  @override
+  void initState() {
+    super.initState();
+    // Evita repetir la lectura del almacenamiento cuando cambia el tema.
+    _roleFuture = const FlutterSecureStorage().read(key: 'user_role');
+  }
+
+  void _volverAlDashboard() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const DashboardScreen()),
+    );
+  }
+
+  void _abrir(Widget screen) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+
+  void _showProximamente() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Funcionalidad en desarrollo - Próximamente disponible'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+@override
+  Widget build(BuildContext context) {
+    return RamisScaffold(
+      title: 'Almacén y préstamos',
+      leading: IconButton(
+        tooltip: 'Volver al dashboard',
+        icon: const Icon(Icons.arrow_back_rounded),
+        onPressed: _volverAlDashboard,
+      ),
+      body: FutureBuilder<String?>(
+        future: _roleFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const RamisLoading(label: 'Cargando módulo de almacén...');
+          }
+
+          // Como en la pantalla original, si no se consigue leer el rol
+          // se aplica 'user' y no se conceden permisos adicionales.
+          final role = (snapshot.data ?? 'user').trim().toLowerCase();
+          final esTrabajador = role == 'trabajador';
+          final esAdmin = role == 'admin';
+          final esAlmacenero = role == 'almacenero';
+          
+          final esResponsable = esAlmacenero || esAdmin;
+          
+          // Tanto trabajadores, almaceneros como administradores pueden gestionar devoluciones
+          final puedeDevolverPropios = esTrabajador || esAlmacenero || esAdmin;
+          final puedeVerModulo = puedeDevolverPropios || esResponsable;
+
+          return SafeArea(
+            child: ListView(
+              padding: RamisSpacing.screenPadding,
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 720),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildWelcomeCard(context, role),
+                        const SizedBox(height: RamisSpacing.medium),
+                        if (esTrabajador) ...[
+                          _buildSectionHeader(
+                            context,
+                            'Tus operaciones',
+                            'Solicita y devuelve equipos de forma segura.',
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Bienvenido al Módulo de Almacén',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.primary,
-                                ),
-                            textAlign: TextAlign.center,
+                          const SizedBox(height: RamisSpacing.medium),
+                          _buildActionCard(
+                            context,
+                            icon: Icons.add_circle_outline_rounded,
+                            title: 'Solicitar préstamo',
+                            subtitle: 'Elige equipos y genera QR para el almacenero',
+                            useSecondaryColor: false,
+                            onTap: () => _abrir(const ArticulosDisponiblesScreen()),
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Rol: ${role.toUpperCase()}',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: const Color.fromARGB(255, 12, 16, 13),
-                                ),
+                          const SizedBox(height: RamisSpacing.medium),
+                          _buildActionCard(
+                            context,
+                            icon: Icons.assignment_return_outlined,
+                            title: 'Devolver equipos',
+                            subtitle: 'Revisa tus pendientes y genera QR de devolución',
+                            useSecondaryColor: true,
+                            onTap: () => _abrir(const MisPrestamosScreen()),
                           ),
                         ],
-                      ),
+                        if (esResponsable) ...[
+                          _buildSectionHeader(
+                            context,
+                            'Operaciones de almacén',
+                            'Gestiona entregas, devoluciones y consultas.',
+                          ),
+                          const SizedBox(height: RamisSpacing.medium),
+                          _buildActionCard(
+                            context,
+                            icon: Icons.qr_code_scanner_rounded,
+                            title: 'Escanear QR',
+                            subtitle: 'Confirma préstamos o devoluciones escaneando',
+                            useSecondaryColor: false,
+                            onTap: () => _abrir(const ScanQRScreen()),
+                          ),
+                          const SizedBox(height: RamisSpacing.medium),
+                          _buildActionCard(
+                            context,
+                            icon: Icons.person_add_alt_1_rounded,
+                            title: 'Préstamo manual',
+                            subtitle: 'Para trabajadores sin celular o app',
+                            useSecondaryColor: true,
+                            onTap: () => _abrir(const ArticulosDisponiblesScreen()),
+                          ),
+                          const SizedBox(height: RamisSpacing.medium),
+                          _buildActionCard(
+                            context,
+                            icon: Icons.manage_search_rounded,
+                            title: 'Buscar artículo / trabajador',
+                            subtitle: 'Ver estado o préstamos actuales',
+                            useSecondaryColor: false,
+                            onTap: _showProximamente,
+                          ),
+                        ],
+                        if (esAdmin || esAlmacenero) ...[
+                          const SizedBox(height: RamisSpacing.medium),
+                          _buildSectionHeader(
+                            context,
+                            'Gestión de devoluciones',
+                            'Acceso operativo para devoluciones y control.',
+                          ),
+                          const SizedBox(height: RamisSpacing.medium),
+                          _buildActionCard(
+                            context,
+                            icon: Icons.assignment_return_outlined,
+                            title: 'Devolver equipos',
+                            subtitle: 'Revisa o procesa los préstamos y devoluciones',
+                            useSecondaryColor: true,
+                            onTap: () => _abrir(const MisPrestamosScreen()),
+                          ),
+                        ],
+                        if (!puedeVerModulo)
+                          const RamisErrorView(
+                            title: 'Acceso no disponible',
+                            description:
+                                'No tienes acceso al módulo de Almacén.\n'
+                                'Contacta al administrador.',
+                          ),
+                        const SizedBox(height: RamisSpacing.medium),
+                      ],
                     ),
                   ),
-
-                  const SizedBox(height: 32),
-
-                  // Opciones según rol
-                  if (role == 'trabajador') ...[
-                    _buildActionCard(
-                      context,
-                      icon: LucideIcons.plusCircle,
-                      title: 'Solicitar Préstamo',
-                      subtitle: 'Elige equipos y genera QR para el almacenero',
-                      color: AppTheme.primary,
-                      onTap: () {
-                        // Navigator.push(context, MaterialPageRoute(builder: (_) => const SolicitarPrestamoScreen()));
-                       Navigator.push(context, MaterialPageRoute(builder: (_) => const ArticulosDisponiblesScreen()));
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildActionCard(
-                      context,
-                      icon: LucideIcons.refreshCw,
-                      title: 'Devolver Equipos',
-                      subtitle: 'Revisa tus pendientes y genera QR de devolución',
-                      color: AppTheme.secondary,
-                      onTap: () {
-                        // Navigator.push(context, MaterialPageRoute(builder: (_) => const MisPendientesScreen()));
-                        _showProximamente(context);
-                      },
-                    ),
-                  ],
-
-                  if (role == 'almacenero') ...[
-                    _buildActionCard(
-                      context,
-                      icon: LucideIcons.qrCode,
-                      title: 'Escanear QR',
-                      subtitle: 'Confirma préstamos o devoluciones escaneando',
-                      color: Colors.deepPurple,
-                      onTap: () {
-                        // Navigator.push(context, MaterialPageRoute(builder: (_) => const EscanearQrScreen()));
-                       Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanQRScreen()));
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildActionCard(
-                      context,
-                      icon: LucideIcons.userPlus,
-                      title: 'Préstamo Manual',
-                      subtitle: 'Para trabajadores sin celular o app',
-                      color: AppTheme.warning,
-                      onTap: () {
-                        // Navigator.push(context, MaterialPageRoute(builder: (_) => const PrestamoManualScreen()));
-                        _showProximamente(context);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildActionCard(
-                      context,
-                      icon: LucideIcons.search,
-                      title: 'Buscar Artículo / Trabajador',
-                      subtitle: 'Ver estado o préstamos actuales',
-                      color: AppTheme.secondary,
-                      onTap: () {
-                        // Navigator.push(context, MaterialPageRoute(builder: (_) => const BusquedaAlmacenScreen()));
-                        _showProximamente(context);
-                      },
-                    ),
-                  ],
-
-                  if (role != 'trabajador' && role != 'almacenero')
-                    const Expanded(
-                      child: Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32.0),
-                          child: Text(
-                            'No tienes acceso al módulo de Almacén.\nContacta al administrador.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  const SizedBox(height: 40),
-                ],
-              ),
+                ),
+              ],
             ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildWelcomeCard(BuildContext context, String role) {
+    final colors = Theme.of(context).colorScheme;
+    final isWorker = role == 'trabajador';
+
+    return RamisCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const RamisLogo(width: 72, height: 72),
+              const SizedBox(width: RamisSpacing.medium),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CORPORACIÓN RAMIS S.A.C.',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: context.ramis.textSecondary,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Bienvenido a Almacén',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: colors.onSurface,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        );
-      },
+          const SizedBox(height: RamisSpacing.medium),
+          Row(
+            children: [
+              Icon(
+                isWorker ? Icons.person_outline_rounded : Icons.admin_panel_settings_outlined,
+                color: colors.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Rol: ${role.toUpperCase()}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: context.ramis.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    String description,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text(
+          description,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: context.ramis.textSecondary,
+              ),
+        ),
+      ],
     );
   }
 
@@ -171,62 +277,56 @@ class AlmacenDashboardScreen extends ConsumerWidget {
     required IconData icon,
     required String title,
     required String subtitle,
-    required Color color,
+    required bool useSecondaryColor,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 36),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primary,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.error,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: color, size: 32),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+    final colors = Theme.of(context).colorScheme;
+    final accent = useSecondaryColor ? colors.secondary : colors.primary;
+    final accentBackground = useSecondaryColor
+        ? colors.secondaryContainer
+        : colors.primaryContainer;
+    final accentForeground = useSecondaryColor
+        ? colors.onSecondaryContainer
+        : colors.onPrimaryContainer;
 
-  void _showProximamente(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Funcionalidad en desarrollo - Próximamente disponible'),
-        duration: Duration(seconds: 2),
+    return RamisCard(
+      onTap: onTap,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: accentBackground,
+              borderRadius: RamisRadius.medium,
+            ),
+            child: Icon(icon, color: accentForeground, size: 28),
+          ),
+          const SizedBox(width: RamisSpacing.medium),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: context.ramis.textSecondary,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(Icons.chevron_right_rounded, color: accent),
+        ],
       ),
     );
   }

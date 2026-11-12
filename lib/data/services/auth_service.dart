@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:file_picker/file_picker.dart';
 import '../models/token_model.dart';
 import '../models/user_model.dart';
 
@@ -24,26 +25,20 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        print('🔥 RESPONSE COMPLETO DEL LOGIN 🔥');
-        print('Todo el JSON recibido: $data');
 
         final tokenModel = TokenModel.fromJson(data);
 
         // Guardar token y role
         await _storage.write(key: 'jwt_token', value: tokenModel.accessToken);
-        await _storage.write(key: 'user_role', value: tokenModel.role ?? 'user');
-
-        print('Role recibido: ${tokenModel.role ?? "No recibido"}');
+        await _storage.write(
+            key: 'user_role', value: tokenModel.role ?? 'user');
 
         // Guardar usuario completo en storage
         final userJson = data['user'] as Map<String, dynamic>?;
         if (userJson != null) {
-          print('Datos del usuario recibidos: $userJson');
           final user = UserModel.fromJson(userJson);
-          await _storage.write(key: 'user_data', value: jsonEncode(user.toJson()));
-          print('Usuario completo guardado en secure storage OK');
-        } else {
-          print('⚠️ ADVERTENCIA: No se recibió el objeto "user" en el login');
+          await _storage.write(
+              key: 'user_data', value: jsonEncode(user.toJson()));
         }
 
         return tokenModel;
@@ -51,10 +46,12 @@ class AuthService {
 
       throw Exception('Login falló con código ${response.statusCode}');
     } on DioException catch (e) {
-      print('--- ERROR DIO DETALLADO ---');
-      print('Status: ${e.response?.statusCode}');
-      print('Data: ${e.response?.data}');
-      throw Exception('Error de conexión o servidor: ${e.message}');
+      final status = e.response?.statusCode;
+      throw Exception(
+        status == null
+            ? 'No se pudo conectar con el servidor (${e.type.name}): ${e.message}'
+            : 'El servidor respondió HTTP $status.',
+      );
     }
   }
 
@@ -68,17 +65,25 @@ class AuthService {
     try {
       final userJson = jsonDecode(userJsonStr) as Map<String, dynamic>;
       return UserModel.fromJson(userJson);
-    } catch (e) {
-      print('Error al parsear user guardado: $e');
+    } catch (_) {
       return null;
     }
+  }
+
+  Future<UserModel> fetchCurrentUser() async {
+    final response = await _dio.get('/auth/me');
+    final user = UserModel.fromJson(response.data as Map<String, dynamic>);
+    await _storage.write(key: 'user_data', value: jsonEncode(user.toJson()));
+    return user;
   }
 
   // ===========================
   // 🔹 LOGOUT
   // ===========================
   Future<void> logout() async {
-    await _storage.deleteAll();
+    await _storage.delete(key: 'jwt_token');
+    await _storage.delete(key: 'user_role');
+    await _storage.delete(key: 'user_data');
   }
 
   // ===========================
@@ -103,8 +108,87 @@ class AuthService {
 
       throw Exception('Error al obtener trabajadores: ${response.statusCode}');
     } on DioException catch (e) {
-      print('Error Dio getTrabajadores: ${e.response?.statusCode} ${e.message}');
       throw Exception('Error de conexión o servidor: ${e.message}');
     }
+  }
+
+  Future<void> changePassword(
+      String currentPassword, String newPassword) async {
+    await _dio.post('/auth/me/cambiar-password', data: {
+      'password_actual': currentPassword,
+      'password_nueva': newPassword,
+    });
+  }
+
+  Future<UserModel> updateMyProfile(Map<String, dynamic> data) async {
+    final response = await _dio.patch('/auth/me', data: data);
+    final user = UserModel.fromJson(response.data as Map<String, dynamic>);
+    await _storage.write(key: 'user_data', value: jsonEncode(user.toJson()));
+    return user;
+  }
+
+  Future<UserModel> register(Map<String, dynamic> data) async {
+    final response = await _dio.post('/auth/register', data: data);
+    return UserModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<List<UserModel>> listUsers(
+      {String? search, String? role, String? status, bool? active}) async {
+    final response = await _dio.get('/auth/usuarios', queryParameters: {
+      if (search?.trim().isNotEmpty == true) 'search': search!.trim(),
+      if (role != null && role != 'Todos') 'role': role,
+      if (status != null && status != 'Todos') 'estado_laboral': status,
+      if (active != null) 'activo': active,
+    });
+    return (response.data as List)
+        .map((item) => UserModel.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<UserModel> getUser(int id) async {
+    final response = await _dio.get('/auth/usuario/$id');
+    return UserModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<UserModel> updateUser(int id, Map<String, dynamic> data) async {
+    final response = await _dio.put('/auth/usuario/$id', data: data);
+    return UserModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<UserModel> updateUserStatus(
+      int id, bool active, String employmentStatus) async {
+    final response = await _dio.patch('/auth/usuario/$id/estado', data: {
+      'activo': active,
+      'estado_laboral': employmentStatus,
+    });
+    return UserModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<UserModel> uploadUserPhoto(int id, PlatformFile file) async {
+    final path = file.path;
+    final bytes = file.bytes;
+    if ((path == null || path.isEmpty) && bytes == null)
+      throw const FormatException('No se pudo leer la imagen seleccionada.');
+    final imagePart = path != null && path.isNotEmpty
+        ? await MultipartFile.fromFile(path, filename: file.name)
+        : MultipartFile.fromBytes(bytes!, filename: file.name);
+    final response = await _dio.post('/auth/usuario/$id/foto',
+        data: FormData.fromMap({
+          'archivo': imagePart,
+        }));
+    return UserModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<UserModel> saveUserSignature(int id, String base64) async {
+    final response = await _dio
+        .put('/auth/usuario/$id/firma', data: {'firma_base64': base64});
+    return UserModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<String?> generateUserSignatureImage(int id) async {
+    final response = await _dio.post('/auth/usuario/$id/firma/imagen');
+    final data = response.data;
+    if (data is Map) return data['firma_url']?.toString();
+    return data is String ? data : null;
   }
 }

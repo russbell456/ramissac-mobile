@@ -3,14 +3,14 @@ class ArticuloImagenModel {
   final String nombreArchivo;
   final String ruta;
   final String tipoMime;
-  final int articuloId;
+  final DateTime? fechaCreacion;
 
   ArticuloImagenModel({
     required this.id,
     required this.nombreArchivo,
     required this.ruta,
     required this.tipoMime,
-    required this.articuloId,
+    this.fechaCreacion,
   });
 
   factory ArticuloImagenModel.fromJson(Map<String, dynamic> json) {
@@ -19,7 +19,20 @@ class ArticuloImagenModel {
       nombreArchivo: json['nombre_archivo'] as String? ?? '',
       ruta: json['ruta'] as String? ?? '',
       tipoMime: json['tipo_mime'] as String? ?? '',
-      articuloId: (json['articulo_id'] as num?)?.toInt() ?? 0,
+      fechaCreacion: json['fecha_creacion'] != null
+          ? DateTime.tryParse(json['fecha_creacion'].toString())
+          : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nombre_archivo': nombreArchivo,
+      'ruta': ruta,
+      'tipo_mime': tipoMime,
+      if (fechaCreacion != null)
+        'fecha_creacion': fechaCreacion!.toIso8601String(),
+    };
   }
 }
